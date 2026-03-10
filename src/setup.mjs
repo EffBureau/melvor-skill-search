@@ -1,3 +1,5 @@
-export function setup() {
-	console.log('Hello From My Mod!');
+export async function setup({ loadModule }) {
+	const main = await loadModule('src/main.mjs');
+
+	main.init();
 }

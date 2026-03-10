@@ -1,0 +1,4 @@
+{
+"namespace": "skillSearch",
+"setup": "src/setup.mjs"
+}
