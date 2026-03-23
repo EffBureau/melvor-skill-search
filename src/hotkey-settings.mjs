@@ -20,15 +20,26 @@ function getSwal() {
  * Registers this mod's settings in the official Mod Settings UI.
  *
  * @param {{section?: (name: string) => any} | undefined} settings Melvor settings API from setup context.
- * @returns {void}
+ * @returns {boolean} True when settings were successfully registered.
  */
 export function registerHotkeySettings(settings) {
-	if (!settings || typeof settings.section !== 'function') return;
+	if (!settings || typeof settings.section !== 'function') return false;
 
-	modSettingsSection = settings.section(SETTINGS_SECTION);
+	try {
+		modSettingsSection = settings.section(SETTINGS_SECTION);
+	} catch (error) {
+		modSettingsSection = null;
+		return false;
+	}
+
+	if (!modSettingsSection || typeof modSettingsSection.add !== 'function') {
+		modSettingsSection = null;
+		return false;
+	}
+
 	if (modSettingsRegistered) {
 		syncCachedHotkeyFromSettings();
-		return;
+		return true;
 	}
 
 	modSettingsSection.add([
@@ -55,6 +66,7 @@ export function registerHotkeySettings(settings) {
 
 	modSettingsRegistered = true;
 	syncCachedHotkeyFromSettings();
+	return true;
 }
 
 /**

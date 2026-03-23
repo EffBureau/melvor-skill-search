@@ -11,7 +11,7 @@ export async function setup({ loadModule, settings }) {
 	const hotkeySettings = await loadModule('src/hotkey-settings.mjs');
 	const main = await loadModule('src/main.mjs');
 
-	hotkeySettings.registerHotkeySettings?.(settings);
+	const hasOfficialSettings = hotkeySettings.registerHotkeySettings?.(settings) === true;
 
 	const dependencies = {
 		findMatchingEntries: sidebarSearch.findMatchingEntries,
@@ -26,5 +26,7 @@ export async function setup({ loadModule, settings }) {
 	main.init({
 		openSkillSearchPopup,
 		isSearchHotkey: hotkeySettings.isSearchHotkey,
+		openHotkeySettingsPopup: hotkeySettings.openHotkeySettingsPopup,
+		hasOfficialSettings,
 	});
 }
