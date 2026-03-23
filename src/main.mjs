@@ -34,7 +34,7 @@ export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsP
 }
 
 /**
- * Registers sidebar actions for opening search and hotkey settings.
+ * Registers sidebar actions for opening search and configuring hotkeys.
  *
  * @param {() => Promise<void> | void} openSkillSearchPopup Opens the search popup.
  * @param {() => Promise<void> | void} openHotkeySettingsPopup Opens settings popup.
@@ -46,20 +46,23 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup) {
 		return;
 	}
 
-	const generalCategory = sidebar.category('General');
+	const moddingCategory = sidebar.category('Modding');
 
-	generalCategory.item('SkillSearch:Open', {
+	moddingCategory.item('SkillSearch:Open', {
 		name: 'Skill Search',
+		icon: 'fa fa-search',
 		onClick: () => {
 			void openSkillSearchPopup();
 		},
 	});
 
-	generalCategory.item('SkillSearch:Settings', {
-		name: 'Skill Search Settings',
-		onClick: () => {
-			void openHotkeySettingsPopup();
-		},
+	moddingCategory.item('Mod Settings', (modSettingsItem) => {
+		modSettingsItem.subitem('SkillSearch:Settings', {
+			name: 'Skill Search Settings',
+			onClick: () => {
+				void openHotkeySettingsPopup();
+			},
+		});
 	});
 }
 
