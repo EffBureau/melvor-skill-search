@@ -17,13 +17,36 @@ function getSwal() {
 }
 
 /**
+ * Resolves the settings API from either setup context or a direct settings object.
+ *
+ * @param {any} input Setup context or settings object.
+ * @returns {{section?: (name: string) => any} | null}
+ */
+function resolveSettingsApi(input) {
+	if (input && typeof input.section === 'function') return input;
+	if (input?.settings && typeof input.settings.section === 'function') return input.settings;
+
+	try {
+		const contextSettings = globalThis.mod?.getContext?.(import.meta)?.settings;
+		if (contextSettings && typeof contextSettings.section === 'function') {
+			return contextSettings;
+		}
+	} catch (error) {
+		// Ignore context lookup failures in environments without mod.getContext.
+	}
+
+	return null;
+}
+
+/**
  * Registers this mod's settings in the official Mod Settings UI.
  *
- * @param {{section?: (name: string) => any} | undefined} settings Melvor settings API from setup context.
+ * @param {any} input Setup context or settings object.
  * @returns {boolean} True when settings were successfully registered.
  */
-export function registerHotkeySettings(settings) {
-	if (!settings || typeof settings.section !== 'function') return false;
+export function registerHotkeySettings(input) {
+	const settings = resolveSettingsApi(input);
+	if (!settings) return false;
 
 	try {
 		modSettingsSection = settings.section(SETTINGS_SECTION);
