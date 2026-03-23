@@ -1,5 +1,9 @@
-const STORAGE_KEY = 'skill-search:hotkey';
 const DEFAULT_HOTKEY = 'Ctrl+K';
+const SETTINGS_SECTION = 'General';
+const SETTINGS_KEY_HOTKEY = 'search-hotkey';
+let modSettingsSection = null;
+let modSettingsRegistered = false;
+let cachedHotkey = DEFAULT_HOTKEY;
 
 /**
  * Resolves the SweetAlert API available in the current runtime.
@@ -13,18 +17,72 @@ function getSwal() {
 }
 
 /**
+ * Registers this mod's settings in the official Mod Settings UI.
+ *
+ * @param {{section?: (name: string) => any} | undefined} settings Melvor settings API from setup context.
+ * @returns {void}
+ */
+export function registerHotkeySettings(settings) {
+	if (!settings || typeof settings.section !== 'function') return;
+
+	modSettingsSection = settings.section(SETTINGS_SECTION);
+	if (modSettingsRegistered) {
+		syncCachedHotkeyFromSettings();
+		return;
+	}
+
+	modSettingsSection.add([
+		{
+			type: 'text',
+			name: SETTINGS_KEY_HOTKEY,
+			label: 'Search Hotkey',
+			hint: 'Used for opening Skill Search (for example: Ctrl+K).',
+			default: cachedHotkey,
+			onChange: (value) => {
+				cachedHotkey = formatParsedHotkey(parseHotkey(String(value ?? '')));
+				return true;
+			},
+		},
+		{
+			type: 'button',
+			name: 'record-search-hotkey',
+			label: 'Record Hotkey',
+			onClick: () => {
+				void openHotkeySettingsPopup();
+			},
+		},
+	]);
+
+	modSettingsRegistered = true;
+	syncCachedHotkeyFromSettings();
+}
+
+/**
+ * Synchronizes in-memory hotkey cache from registered mod settings.
+ *
+ * @returns {void}
+ */
+function syncCachedHotkeyFromSettings() {
+	if (!modSettingsRegistered || !modSettingsSection?.get) return;
+
+	try {
+		const value = modSettingsSection.get(SETTINGS_KEY_HOTKEY);
+		if (typeof value === 'string' && value.trim()) {
+			cachedHotkey = value.trim();
+		}
+	} catch (error) {
+		// Ignore lookup errors during init edge cases.
+	}
+}
+
+/**
  * Reads the persisted hotkey or returns the default binding.
  *
  * @returns {string} Stored hotkey string.
  */
 function readStoredHotkey() {
-	try {
-		const value = globalThis.localStorage?.getItem(STORAGE_KEY);
-		if (!value || !value.trim()) return DEFAULT_HOTKEY;
-		return value.trim();
-	} catch (error) {
-		return DEFAULT_HOTKEY;
-	}
+	syncCachedHotkeyFromSettings();
+	return cachedHotkey;
 }
 
 /**
@@ -34,10 +92,13 @@ function readStoredHotkey() {
  * @returns {void}
  */
 function writeStoredHotkey(hotkey) {
+	cachedHotkey = hotkey;
+	if (!modSettingsRegistered || !modSettingsSection?.set) return;
+
 	try {
-		globalThis.localStorage?.setItem(STORAGE_KEY, hotkey);
+		modSettingsSection.set(SETTINGS_KEY_HOTKEY, hotkey);
 	} catch (error) {
-		// Ignore storage errors in restricted environments.
+		// Ignore update errors during init edge cases.
 	}
 }
 

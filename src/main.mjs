@@ -1,14 +1,13 @@
 /**
- * Initializes UI hooks for opening skill search and settings.
+ * Initializes UI hooks for opening skill search.
  *
  * @param {{
  *   openSkillSearchPopup?: () => Promise<void> | void,
  *   isSearchHotkey?: (event: KeyboardEvent) => boolean,
- *   openHotkeySettingsPopup?: () => Promise<void> | void,
  * }} [dependencies] Injected runtime dependencies.
  * @returns {void}
  */
-export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsPopup } = {}) {
+export function init({ openSkillSearchPopup, isSearchHotkey } = {}) {
 	if (typeof openSkillSearchPopup !== 'function') {
 		console.warn('SkillSearch: Popup handler is not available.');
 		return;
@@ -17,12 +16,8 @@ export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsP
 		console.warn('SkillSearch: Hotkey matcher is not available.');
 		return;
 	}
-	if (typeof openHotkeySettingsPopup !== 'function') {
-		console.warn('SkillSearch: Settings popup handler is not available.');
-		return;
-	}
 
-	registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup);
+	registerSidebarButton(openSkillSearchPopup);
 
 	document.addEventListener('keydown', (event) => {
 		if (!isSearchHotkey(event)) return;
@@ -34,13 +29,12 @@ export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsP
 }
 
 /**
- * Registers sidebar actions for opening search and configuring hotkeys.
+ * Registers a sidebar action for opening search.
  *
  * @param {() => Promise<void> | void} openSkillSearchPopup Opens the search popup.
- * @param {() => Promise<void> | void} openHotkeySettingsPopup Opens settings popup.
  * @returns {void}
  */
-function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup) {
+function registerSidebarButton(openSkillSearchPopup) {
 	if (typeof sidebar === 'undefined' || typeof sidebar.category !== 'function') {
 		console.warn('SkillSearch: Sidebar API not available in this context.');
 		return;
@@ -54,15 +48,6 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup) {
 		onClick: () => {
 			void openSkillSearchPopup();
 		},
-	});
-
-	moddingCategory.item('Mod Settings', (modSettingsItem) => {
-		modSettingsItem.subitem('SkillSearch:Settings', {
-			name: 'Skill Search Settings',
-			onClick: () => {
-				void openHotkeySettingsPopup();
-			},
-		});
 	});
 }
 
