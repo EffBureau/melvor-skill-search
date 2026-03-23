@@ -48,7 +48,13 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 
 	moddingCategory.item('SkillSearch:Open', {
 		name: 'Skill Search',
-		icon: 'fa fa-search',
+		iconClass: 'fa fa-search',
+		onRender: ({ iconEl }) => {
+			if (!(iconEl instanceof HTMLElement)) return;
+			iconEl.style.display = 'flex';
+			iconEl.style.alignItems = 'center';
+			iconEl.style.justifyContent = 'center';
+		},
 		onClick: () => {
 			void openSkillSearchPopup();
 		},
