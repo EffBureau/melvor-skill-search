@@ -149,7 +149,6 @@ function createSuggestionRow(entry, textColor, onClick, onMouseEnter) {
 	return row;
 }
 
-// Converts stored icon metadata into an actual icon element.
 /**
  * Converts icon metadata into a renderable DOM element.
  *
@@ -315,9 +314,20 @@ function setupSkillSuggestionDropdown(popup, popupApi, onSelect, dependencies) {
 export async function openSkillSearchPopup(dependencies) {
 	const {
 		findMatchingEntries,
+		getAllSidebarEntries,
 		navigateToEntry,
 		addRecentEntry,
 	} = dependencies;
+
+	if (
+		typeof findMatchingEntries !== 'function'
+		|| typeof getAllSidebarEntries !== 'function'
+		|| typeof navigateToEntry !== 'function'
+		|| typeof addRecentEntry !== 'function'
+	) {
+		console.warn('SkillSearch: Popup dependencies are not available.');
+		return;
+	}
 
 	const popupApi = getSwal();
 	if (!popupApi) {

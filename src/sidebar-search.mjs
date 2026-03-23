@@ -1,6 +1,18 @@
 // Builds searchable entries from the Melvor sidebar and ranks results.
 
 /**
+ * Determines whether a label looks like an internal namespaced id.
+ *
+ * @param {string} value Candidate label.
+ * @returns {boolean}
+ */
+function isNamespacedLabel(value) {
+	if (typeof value !== 'string') return false;
+	const trimmed = value.trim();
+	return /^[A-Za-z0-9_]+:[A-Za-z0-9_]+$/.test(trimmed);
+}
+
+/**
  * @typedef {object} SidebarEntry
  * @property {string} id Unique entry identifier.
  * @property {string} name Display name.
@@ -62,6 +74,7 @@ function buildEntryFromAnchor(linkEl, categoryName, index, order) {
 
 	const name = getAnchorDisplayName(linkEl);
 	if (!name || name === 'Skill Search') return null;
+	if (isNamespacedLabel(name)) return null;
 
 	const href = linkEl.getAttribute('href') ?? '';
 	const id = `${categoryName}:${name}:${href}:${index}`;
