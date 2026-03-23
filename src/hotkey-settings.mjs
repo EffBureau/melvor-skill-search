@@ -80,7 +80,7 @@ export function registerHotkeySettings(input) {
 		{
 			type: 'button',
 			name: 'record-search-hotkey',
-			label: 'Record Hotkey',
+			display: 'Record Hotkey',
 			onClick: () => {
 				void openHotkeySettingsPopup();
 			},
