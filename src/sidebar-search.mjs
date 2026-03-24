@@ -1,5 +1,3 @@
-// Builds searchable entries from the Melvor sidebar and ranks results.
-
 /**
  * Determines whether a label looks like an internal namespaced id.
  *
@@ -13,6 +11,8 @@ function isNamespacedLabel(value) {
 }
 
 /**
+ * Defines a searchable sidebar entry with navigation callback.
+ *
  * @typedef {object} SidebarEntry
  * @property {string} id Unique entry identifier.
  * @property {string} name Display name.
@@ -23,7 +23,12 @@ function isNamespacedLabel(value) {
  * @property {() => void} navigate Navigation callback.
  */
 
-// Whitelist: only skills + Shop + Bank should appear in search results.
+/**
+ * Returns the allowlist of sidebar entry names searchable by this mod.
+ * Includes all skills plus explicit utility entries.
+ *
+ * @returns {Set<string>}
+ */
 function getAllowedEntryNames() {
 	const allowed = new Set(['shop', 'bank', 'combat simulator']);
 	const gameApi = typeof game !== 'undefined' ? game : globalThis.game;
@@ -38,8 +43,12 @@ function getAllowedEntryNames() {
 
 	return allowed;
 }
-
-// Reads icon info from a sidebar link (either image-based or class-based icon).
+/**
+ * Extracts icon data from a sidebar link element.
+ *
+ * @param {HTMLElement} linkEl The sidebar link element.
+ * @returns {object|null} The icon data or null if not found.
+ */
 function extractIconData(linkEl) {
 	if (!(linkEl instanceof HTMLElement)) return null;
 
@@ -55,8 +64,12 @@ function extractIconData(linkEl) {
 
 	return null;
 }
-
-// Extracts the visible entry name from a sidebar anchor.
+/**
+ * Extracts the visible label text from a sidebar anchor.
+ *
+ * @param {HTMLElement} linkEl Sidebar link element.
+ * @returns {string}
+ */
 function getAnchorDisplayName(linkEl) {
 	if (!(linkEl instanceof HTMLElement)) return '';
 
@@ -67,8 +80,15 @@ function getAnchorDisplayName(linkEl) {
 
 	return linkEl.textContent?.trim() ?? '';
 }
-
-// Converts one sidebar anchor element into a searchable/navigable entry object.
+/**
+ * Converts one sidebar anchor into a searchable entry object.
+ *
+ * @param {HTMLAnchorElement} linkEl Sidebar anchor element.
+ * @param {string} categoryName Source category name.
+ * @param {number} index Position within source list.
+ * @param {number} order Global ordering value.
+ * @returns {SidebarEntry | null}
+ */
 function buildEntryFromAnchor(linkEl, categoryName, index, order) {
 	if (!(linkEl instanceof HTMLAnchorElement)) return null;
 
@@ -92,6 +112,20 @@ function buildEntryFromAnchor(linkEl, categoryName, index, order) {
 	};
 }
 
+/**
+ * Builds and appends an entry when it passes allowlist and dedupe checks.
+ *
+ * @param {{
+ * 	linkEl: Element,
+ * 	categoryName: string,
+ * 	index: number,
+ * 	orderRef: { value: number },
+ * 	allowedNames: Set<string>,
+ * 	seen: Set<string>,
+ * 	entries: SidebarEntry[]
+ * }} params
+ * @returns {void}
+ */
 function pushEntryIfAllowed({ linkEl, categoryName, index, orderRef, allowedNames, seen, entries }) {
 	if (!(linkEl instanceof HTMLAnchorElement)) return;
 
@@ -106,6 +140,12 @@ function pushEntryIfAllowed({ linkEl, categoryName, index, orderRef, allowedName
 	entries.push(entry);
 }
 
+/**
+ * Creates an alias entry that navigates to another entry target.
+ *
+ * @param {{ name: string, baseEntry: SidebarEntry | null | undefined, order: number }} params
+ * @returns {SidebarEntry | null}
+ */
 function createAliasEntry({ name, baseEntry, order }) {
 	if (!baseEntry) return null;
 
@@ -120,6 +160,13 @@ function createAliasEntry({ name, baseEntry, order }) {
 	};
 }
 
+/**
+ * Normalizes special combat-related entries to share Attack navigation.
+ * Adds a synthetic Combat alias when none exists.
+ *
+ * @param {SidebarEntry[]} entries
+ * @returns {SidebarEntry[]}
+ */
 function normalizeSpecialEntryNavigation(entries) {
 	if (!Array.isArray(entries) || entries.length === 0) return entries;
 
