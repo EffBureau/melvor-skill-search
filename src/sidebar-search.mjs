@@ -45,22 +45,40 @@ function getAllowedEntryNames() {
 }
 
 /**
- * Extracts icon data from a sidebar link element.
- *
- * @param {HTMLElement} linkEl The sidebar link element.
- * @returns {object|null} The icon data or null if not found.
+ * Static icon paths for non-skill utility entries.
  */
-function extractIconData(linkEl) {
-	if (!(linkEl instanceof HTMLElement)) return null;
+const STATIC_ENTRY_MEDIA = {
+	shop: 'assets/media/main/gp.svg',
+	bank: 'assets/media/main/bank_header.svg',
+	'combat simulator': 'assets/media/skills/combat/combat.png',
+};
 
-	const imageIcon = linkEl.querySelector('img');
-	if (imageIcon instanceof HTMLImageElement && imageIcon.src) {
-		return { kind: 'image', value: imageIcon.src };
+/**
+ * Resolves a sidebar entry icon from game media sources.
+ *
+ * @param {string} entryName Sidebar entry name.
+ * @returns {{kind: 'image', value: string} | null} Icon metadata or null when unavailable.
+ */
+function resolveEntryIcon(entryName) {
+	const normalized = String(entryName ?? '').trim().toLowerCase();
+	if (!normalized) return null;
+
+	const gameApi = typeof game !== 'undefined' ? game : globalThis.game;
+	const skills = gameApi?.skills?.allObjects;
+	if (skills) {
+		const matchedSkill = Array.from(skills).find((skill) => {
+			const skillName = String(skill?.name ?? '').trim().toLowerCase();
+			return skillName === normalized;
+		});
+
+		if (typeof matchedSkill?.media === 'string' && matchedSkill.media) {
+			return { kind: 'image', value: matchedSkill.media };
+		}
 	}
 
-	const classIcon = linkEl.querySelector('i, .nav-main-link-icon, .skill-icon-xs, .skill-icon-sm');
-	if (classIcon instanceof HTMLElement && classIcon.className) {
-		return { kind: 'class', value: classIcon.className };
+	const staticMedia = STATIC_ENTRY_MEDIA[normalized];
+	if (typeof staticMedia === 'string' && staticMedia) {
+		return { kind: 'image', value: staticMedia };
 	}
 
 	return null;
@@ -108,7 +126,7 @@ function buildEntryFromAnchor(linkEl, categoryName, index, order) {
 		href,
 		searchText: name.toLowerCase(),
 		order,
-		icon: extractIconData(linkEl),
+		icon: resolveEntryIcon(name),
 		navigate: () => {
 			linkEl.click();
 		},
