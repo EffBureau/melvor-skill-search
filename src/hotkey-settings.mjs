@@ -4,6 +4,7 @@ const SETTINGS_KEY_HOTKEY = 'search-hotkey';
 let modSettingsSection = null;
 let modSettingsRegistered = false;
 let cachedHotkey = DEFAULT_HOTKEY;
+const hotkeyChangeListeners = new Set();
 
 /**
  * Resolves the SweetAlert API available in the current runtime.
@@ -36,6 +37,37 @@ function resolveSettingsApi(input) {
 	}
 
 	return null;
+}
+
+/**
+ * Subscribes to hotkey updates.
+ *
+ * @param {(hotkey: string) => void} listener Callback invoked with normalized hotkey.
+ * @returns {() => void} Unsubscribe function.
+ */
+export function onSearchHotkeyChanged(listener) {
+	if (typeof listener !== 'function') return () => {};
+	hotkeyChangeListeners.add(listener);
+
+	return () => {
+		hotkeyChangeListeners.delete(listener);
+	};
+}
+
+/**
+ * Notifies listeners when the active hotkey changes.
+ *
+ * @param {string} hotkey Normalized hotkey.
+ * @returns {void}
+ */
+function notifyHotkeyChanged(hotkey) {
+	hotkeyChangeListeners.forEach((listener) => {
+		try {
+			listener(hotkey);
+		} catch (error) {
+			// Ignore listener failures to avoid breaking settings updates.
+		}
+	});
 }
 
 /**
@@ -74,6 +106,7 @@ export function registerHotkeySettings(input) {
 			default: cachedHotkey,
 			onChange: (value) => {
 				cachedHotkey = formatParsedHotkey(parseHotkey(String(value ?? '')));
+				notifyHotkeyChanged(cachedHotkey);
 				return true;
 			},
 		},
@@ -103,7 +136,11 @@ function syncCachedHotkeyFromSettings() {
 	try {
 		const value = modSettingsSection.get(SETTINGS_KEY_HOTKEY);
 		if (typeof value === 'string' && value.trim()) {
-			cachedHotkey = value.trim();
+			const nextHotkey = formatParsedHotkey(parseHotkey(value.trim()));
+			if (nextHotkey !== cachedHotkey) {
+				cachedHotkey = nextHotkey;
+				notifyHotkeyChanged(cachedHotkey);
+			}
 		}
 	} catch (error) {
 		// Ignore lookup errors during init edge cases.
@@ -128,6 +165,7 @@ function readStoredHotkey() {
  */
 function writeStoredHotkey(hotkey) {
 	cachedHotkey = hotkey;
+	notifyHotkeyChanged(cachedHotkey);
 	if (!modSettingsRegistered || !modSettingsSection?.set) return;
 
 	try {
