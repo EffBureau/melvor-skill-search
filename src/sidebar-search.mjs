@@ -43,6 +43,7 @@ function getAllowedEntryNames() {
 
 	return allowed;
 }
+
 /**
  * Extracts icon data from a sidebar link element.
  *
@@ -64,6 +65,7 @@ function extractIconData(linkEl) {
 
 	return null;
 }
+
 /**
  * Extracts the visible label text from a sidebar anchor.
  *
@@ -80,6 +82,7 @@ function getAnchorDisplayName(linkEl) {
 
 	return linkEl.textContent?.trim() ?? '';
 }
+
 /**
  * Converts one sidebar anchor into a searchable entry object.
  *
