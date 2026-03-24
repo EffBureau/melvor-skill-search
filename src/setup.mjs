@@ -26,11 +26,20 @@ export async function setup(context) {
 	};
 
 	const openSkillSearchPopup = () => popup.openSkillSearchPopup(dependencies);
-
-	main.init({
+	const initMain = () => main.init({
 		openSkillSearchPopup,
 		isSearchHotkey: hotkeySettings.isSearchHotkey,
 		openHotkeySettingsPopup: hotkeySettings.openHotkeySettingsPopup,
 		hasOfficialSettings,
 	});
+
+	if (typeof context.onCharacterLoaded === 'function') {
+		context.onCharacterLoaded(() => {
+			initMain();
+		});
+		return;
+	}
+
+	// Fallback for runtimes that do not expose lifecycle hooks on the context.
+	initMain();
 }
