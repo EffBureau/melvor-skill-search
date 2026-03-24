@@ -6,8 +6,6 @@
  *   isSearchHotkey?: (event: KeyboardEvent) => boolean,
  *   getSearchHotkey?: () => string,
  *   onSearchHotkeyChanged?: (listener: (hotkey: string) => void) => (() => void),
- *   openHotkeySettingsPopup?: () => Promise<void> | void,
- *   hasOfficialSettings?: boolean,
  * }} [dependencies] Injected runtime dependencies.
  * @returns {void}
  */
@@ -19,8 +17,6 @@ export function init({
 	isSearchHotkey,
 	getSearchHotkey,
 	onSearchHotkeyChanged,
-	openHotkeySettingsPopup,
-	hasOfficialSettings,
 } = {}) {
 	if (typeof openSkillSearchPopup !== 'function') {
 		console.warn('SkillSearch: Popup handler is not available.');
@@ -35,8 +31,6 @@ export function init({
 		openSkillSearchPopup,
 		getSearchHotkey,
 		onSearchHotkeyChanged,
-		openHotkeySettingsPopup,
-		Boolean(hasOfficialSettings),
 	);
 	if (isKeydownBound) return;
 	isKeydownBound = true;
@@ -56,11 +50,9 @@ export function init({
  * @param {() => Promise<void> | void} openSkillSearchPopup Opens the search popup.
  * @param {(() => string) | undefined} getSearchHotkey Reads the configured hotkey label.
  * @param {((listener: (hotkey: string) => void) => (() => void)) | undefined} onSearchHotkeyChanged Subscribes to hotkey changes.
- * @param {(() => Promise<void> | void) | undefined} openHotkeySettingsPopup Opens settings popup.
- * @param {boolean} hasOfficialSettings Whether settings were registered through Mod Settings API.
  * @returns {void}
  */
-function registerSidebarButton(openSkillSearchPopup, getSearchHotkey, onSearchHotkeyChanged, openHotkeySettingsPopup, hasOfficialSettings) {
+function registerSidebarButton(openSkillSearchPopup, getSearchHotkey, onSearchHotkeyChanged) {
 	if (typeof sidebar === 'undefined' || typeof sidebar.category !== 'function') {
 		console.warn('SkillSearch: Sidebar API not available in this context.');
 		return;
@@ -174,40 +166,6 @@ function getItemIconConfig(iconData) {
 	}
 
 	return { iconClass: 'fa fa-search' };
-}
-
-/**
- * Builds a settings label element with optional icon for fallback sidebar settings.
- *
- * @param {{kind?: string, value?: string} | null} iconData
- * @returns {string | HTMLElement}
- */
-function buildSettingsLabel(iconData) {
-	if (!iconData || typeof iconData !== 'object') return 'Settings';
-
-	const container = document.createElement('span');
-	container.style.display = 'inline-flex';
-	container.style.alignItems = 'center';
-	container.style.gap = '0.35rem';
-
-	if (iconData.kind === 'image' && typeof iconData.value === 'string' && iconData.value) {
-		const img = document.createElement('img');
-		img.src = iconData.value;
-		img.alt = '';
-		img.width = 14;
-		img.height = 14;
-		container.appendChild(img);
-	} else if (iconData.kind === 'class' && typeof iconData.value === 'string' && iconData.value) {
-		const icon = document.createElement('i');
-		icon.className = iconData.value;
-		container.appendChild(icon);
-	}
-
-	const text = document.createElement('span');
-	text.textContent = 'Settings';
-	container.appendChild(text);
-
-	return container;
 }
 
 /**
