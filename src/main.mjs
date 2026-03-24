@@ -4,16 +4,21 @@
  * @param {{
  *   openSkillSearchPopup?: () => Promise<void> | void,
  *   isSearchHotkey?: (event: KeyboardEvent) => boolean,
+ *   getSearchHotkey?: () => string,
+ *   onSearchHotkeyChanged?: (listener: (hotkey: string) => void) => (() => void),
  *   openHotkeySettingsPopup?: () => Promise<void> | void,
  *   hasOfficialSettings?: boolean,
  * }} [dependencies] Injected runtime dependencies.
  * @returns {void}
  */
 let isKeydownBound = false;
+let unsubscribeHotkeyBadge = null;
 
 export function init({
 	openSkillSearchPopup,
 	isSearchHotkey,
+	getSearchHotkey,
+	onSearchHotkeyChanged,
 	openHotkeySettingsPopup,
 	hasOfficialSettings,
 } = {}) {
@@ -28,6 +33,8 @@ export function init({
 
 	registerSidebarButton(
 		openSkillSearchPopup,
+		getSearchHotkey,
+		onSearchHotkeyChanged,
 		openHotkeySettingsPopup,
 		Boolean(hasOfficialSettings),
 	);
@@ -47,11 +54,13 @@ export function init({
  * Registers a sidebar action for opening search.
  *
  * @param {() => Promise<void> | void} openSkillSearchPopup Opens the search popup.
+ * @param {(() => string) | undefined} getSearchHotkey Reads the configured hotkey label.
+ * @param {((listener: (hotkey: string) => void) => (() => void)) | undefined} onSearchHotkeyChanged Subscribes to hotkey changes.
  * @param {(() => Promise<void> | void) | undefined} openHotkeySettingsPopup Opens settings popup.
  * @param {boolean} hasOfficialSettings Whether settings were registered through Mod Settings API.
  * @returns {void}
  */
-function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, hasOfficialSettings) {
+function registerSidebarButton(openSkillSearchPopup, getSearchHotkey, onSearchHotkeyChanged, openHotkeySettingsPopup, hasOfficialSettings) {
 	if (typeof sidebar === 'undefined' || typeof sidebar.category !== 'function') {
 		console.warn('SkillSearch: Sidebar API not available in this context.');
 		return;
@@ -65,19 +74,75 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 		name: 'Skill Search',
 		...(shopLocation ? { before: shopLocation.itemId } : {}),
 		...iconConfig,
+		aside: getHotkeyIndicatorText(getSearchHotkey),
+		onRender: ({ asideEl }) => {
+			applyHotkeyIndicatorStyles(asideEl, getSearchHotkey);
+		},
 		onClick: () => {
 			void openSkillSearchPopup();
 		},
 	});
 
+	if (typeof unsubscribeHotkeyBadge === 'function') {
+		unsubscribeHotkeyBadge();
+		unsubscribeHotkeyBadge = null;
+	}
+	if (typeof onSearchHotkeyChanged === 'function') {
+		unsubscribeHotkeyBadge = onSearchHotkeyChanged(() => {
+			applyHotkeyIndicatorStyles(skillSearchItem.asideEl, getSearchHotkey);
+		});
+	}
+
 	if (hasOfficialSettings || typeof openHotkeySettingsPopup !== 'function') return;
 
 	skillSearchItem.subitem('SkillSearch:Settings', {
 		name: buildSettingsLabel(archaeologyIcon),
-		onClick: () => {
-			void openHotkeySettingsPopup();
+		onClick: async () => {
+			await openHotkeySettingsPopup();
+			applyHotkeyIndicatorStyles(skillSearchItem.asideEl, getSearchHotkey);
 		},
 	});
+}
+
+/**
+ * Returns the key label for the sidebar hotkey indicator.
+ *
+ * @param {(() => string) | undefined} getSearchHotkey Reads current hotkey binding.
+ * @returns {string}
+ */
+function getHotkeyIndicatorText(getSearchHotkey) {
+	if (typeof getSearchHotkey !== 'function') return 'Ctrl+K';
+
+	const hotkey = String(getSearchHotkey() ?? '').trim();
+	return hotkey || 'Ctrl+K';
+}
+
+/**
+ * Styles and updates the sidebar hotkey indicator badge.
+ *
+ * @param {HTMLElement | undefined} asideEl Sidebar item aside element.
+ * @param {(() => string) | undefined} getSearchHotkey Reads current hotkey binding.
+ * @returns {void}
+ */
+function applyHotkeyIndicatorStyles(asideEl, getSearchHotkey) {
+	if (!(asideEl instanceof HTMLElement)) return;
+
+	asideEl.textContent = getHotkeyIndicatorText(getSearchHotkey);
+	asideEl.title = `Hotkey: ${asideEl.textContent}`;
+	asideEl.style.display = 'inline-flex';
+	asideEl.style.alignItems = 'center';
+	asideEl.style.justifyContent = 'center';
+	asideEl.style.minWidth = '3rem';
+	asideEl.style.padding = '0.12rem 0.42rem';
+	asideEl.style.borderRadius = '0.35rem';
+	asideEl.style.background = 'rgba(255,255,255,0.08)';
+	asideEl.style.color = 'rgba(255,255,255,0.95)';
+	asideEl.style.fontSize = '0.68rem';
+	asideEl.style.lineHeight = '1.2';
+	asideEl.style.fontWeight = '600';
+	asideEl.style.letterSpacing = '0.01em';
+	asideEl.style.whiteSpace = 'nowrap';
+	asideEl.style.border = '1px solid rgba(255,255,255,0.14)';
 }
 
 /**

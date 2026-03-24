@@ -29,6 +29,8 @@ export async function setup(context) {
 	const initMain = () => main.init({
 		openSkillSearchPopup,
 		isSearchHotkey: hotkeySettings.isSearchHotkey,
+		getSearchHotkey: hotkeySettings.getSearchHotkey,
+		onSearchHotkeyChanged: hotkeySettings.onSearchHotkeyChanged,
 		openHotkeySettingsPopup: hotkeySettings.openHotkeySettingsPopup,
 		hasOfficialSettings,
 	});
