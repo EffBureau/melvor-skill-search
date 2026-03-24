@@ -13,6 +13,9 @@
  * @property {(entry: SearchEntry) => void} navigateToEntry Navigates to a selected entry.
  * @property {(entry: SearchEntry) => void} addRecentEntry Persists a recent selection.
  * @property {(entries: SearchEntry[]) => SearchEntry[]} getRecentEntries Resolves recent entries from current entries.
+ * @property {(() => void) | undefined} openHotkeySettingsPopup Opens the hotkey settings popup.
+ * @property {(() => string) | undefined} getSearchHotkey Reads the current hotkey binding.
+ * @property {((listener: (hotkey: string) => void) => (() => void)) | undefined} onSearchHotkeyChanged Subscribes to hotkey changes.
  */
 
 /**
@@ -317,6 +320,8 @@ export async function openSkillSearchPopup(dependencies) {
 		getAllSidebarEntries,
 		navigateToEntry,
 		addRecentEntry,
+		openHotkeySettingsPopup,
+		getSearchHotkey,
 	} = dependencies;
 
 	if (
@@ -359,6 +364,36 @@ export async function openSkillSearchPopup(dependencies) {
 			setupSkillSuggestionDropdown(popup, popupApi, () => {
 				selectedFromDropdown = true;
 			}, dependencies);
+
+			// Add gear icon for hotkey settings
+			if (typeof openHotkeySettingsPopup === 'function') {
+				const titleEl = popup.querySelector('.swal2-title');
+				if (titleEl) {
+					const gearButton = document.createElement('button');
+					gearButton.innerHTML = '⚙️';
+					gearButton.style.cssText = `
+						position: absolute;
+						top: 12px;
+						right: 12px;
+						background: none;
+						border: none;
+						font-size: 24px;
+						cursor: pointer;
+						padding: 4px 8px;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: opacity 0.2s;
+					`;
+					gearButton.addEventListener('mouseover', () => { gearButton.style.opacity = '0.7'; });
+					gearButton.addEventListener('mouseout', () => { gearButton.style.opacity = '1'; });
+					gearButton.addEventListener('click', async () => {
+						await openHotkeySettingsPopup();
+					});
+					titleEl.parentElement.style.position = 'relative';
+					titleEl.parentElement.insertAdjacentElement('beforeend', gearButton);
+				}
+			}
 		},
 		showCancelButton: true,
 		confirmButtonText: 'Search',

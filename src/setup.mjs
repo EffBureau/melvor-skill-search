@@ -12,10 +12,10 @@ export async function setup(context) {
 	const hotkeySettings = await loadModule('src/hotkey-settings.mjs');
 	const main = await loadModule('src/main.mjs');
 
-	const hasOfficialSettings = hotkeySettings.registerHotkeySettings?.(context) === true;
-	if (!hasOfficialSettings) {
-		console.warn('SkillSearch: Mod Settings API unavailable, using sidebar fallback.');
-	}
+	// Skip official settings registration - use sidebar subitem instead
+	const hasOfficialSettings = false;
+
+	console.log('SkillSearch: Using sidebar button for settings (hotkey popup).');
 
 	const dependencies = {
 		findMatchingEntries: sidebarSearch.findMatchingEntries,
@@ -25,7 +25,12 @@ export async function setup(context) {
 		getRecentEntries: recentSearches.getRecentEntries,
 	};
 
-	const openSkillSearchPopup = () => popup.openSkillSearchPopup(dependencies);
+	const openSkillSearchPopup = () => popup.openSkillSearchPopup({
+		...dependencies,
+		openHotkeySettingsPopup: hotkeySettings.openHotkeySettingsPopup,
+		getSearchHotkey: hotkeySettings.getSearchHotkey,
+		onSearchHotkeyChanged: hotkeySettings.onSearchHotkeyChanged,
+	});
 	const initMain = () => main.init({
 		openSkillSearchPopup,
 		isSearchHotkey: hotkeySettings.isSearchHotkey,

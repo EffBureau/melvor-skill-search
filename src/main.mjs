@@ -92,16 +92,6 @@ function registerSidebarButton(openSkillSearchPopup, getSearchHotkey, onSearchHo
 			applyHotkeyIndicatorStyles(skillSearchItem.asideEl, getSearchHotkey);
 		});
 	}
-
-	if (hasOfficialSettings || typeof openHotkeySettingsPopup !== 'function') return;
-
-	skillSearchItem.subitem('SkillSearch:Settings', {
-		name: buildSettingsLabel(archaeologyIcon),
-		onClick: async () => {
-			await openHotkeySettingsPopup();
-			applyHotkeyIndicatorStyles(skillSearchItem.asideEl, getSearchHotkey);
-		},
-	});
 }
 
 /**
