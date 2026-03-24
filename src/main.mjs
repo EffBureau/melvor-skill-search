@@ -9,6 +9,8 @@
  * }} [dependencies] Injected runtime dependencies.
  * @returns {void}
  */
+let isKeydownBound = false;
+
 export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsPopup, hasOfficialSettings } = {}) {
 	if (typeof openSkillSearchPopup !== 'function') {
 		console.warn('SkillSearch: Popup handler is not available.');
@@ -20,6 +22,8 @@ export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsP
 	}
 
 	registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, Boolean(hasOfficialSettings));
+	if (isKeydownBound) return;
+	isKeydownBound = true;
 
 	document.addEventListener('keydown', (event) => {
 		if (!isSearchHotkey(event)) return;
@@ -44,10 +48,11 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 		return;
 	}
 
-	const moddingCategory = sidebar.category('Modding');
-
-	moddingCategory.item('SkillSearch:Open', {
+	const shopLocation = getShopLocation();
+	const targetCategory = shopLocation?.category ?? sidebar.category('General');
+	const skillSearchItem = targetCategory.item('Skill Search', {
 		name: 'Skill Search',
+		...(shopLocation ? { before: shopLocation.itemId } : {}),
 		iconClass: 'fa fa-search',
 		onRender: ({ iconEl }) => {
 			if (!(iconEl instanceof HTMLElement)) return;
@@ -62,14 +67,40 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 
 	if (hasOfficialSettings || typeof openHotkeySettingsPopup !== 'function') return;
 
-	moddingCategory.item('Mod Settings', (modSettingsItem) => {
-		modSettingsItem.subitem('SkillSearch:Settings', {
-			name: 'Skill Search Settings',
-			onClick: () => {
-				void openHotkeySettingsPopup();
-			},
-		});
+	skillSearchItem.subitem('SkillSearch:Settings', {
+		name: 'Settings',
+		onClick: () => {
+			void openHotkeySettingsPopup();
+		},
 	});
+}
+
+/**
+ * Finds the current category/item id for Shop in the rendered sidebar.
+ *
+ * @returns {{ category: any, itemId: string } | null}
+ */
+function getShopLocation() {
+	if (typeof sidebar?.categories !== 'function') return null;
+
+	for (const category of sidebar.categories()) {
+		if (!category || typeof category.items !== 'function') continue;
+
+		const shop = category.items().find((item) => {
+			const id = String(item?.id ?? '').trim().toLowerCase();
+			const label = String(item?.nameEl?.textContent ?? '').trim().toLowerCase();
+			return id === 'shop' || id === 'melvord:shop' || label === 'shop';
+		});
+
+		if (shop) {
+			return {
+				category,
+				itemId: shop.id,
+			};
+		}
+	}
+
+	return null;
 }
 
 /**
