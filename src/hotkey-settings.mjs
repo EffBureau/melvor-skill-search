@@ -320,14 +320,22 @@ export function isSearchHotkey(event) {
 /**
  * Opens the settings popup and records a new hotkey from user input.
  *
+ * @param {() => Promise<void>} [reopenSearchPopup] Optional callback to reopen search popup on close.
  * @returns {Promise<void>}
  */
-export async function openHotkeySettingsPopup() {
+export async function openHotkeySettingsPopup(reopenSearchPopup) {
 	const popupApi = getSwal();
 	if (!popupApi) {
 		console.warn('SkillSearch: Swal API not available for settings popup.');
 		return;
 	}
+
+	const reopenSearchPopupSafely = async () => {
+		if (typeof reopenSearchPopup !== 'function') return;
+		// Delay reopen to avoid the same Escape key interaction immediately closing the next popup.
+		await new Promise((resolve) => setTimeout(resolve, 80));
+		await reopenSearchPopup();
+	};
 
 	const current = getSearchHotkey();
 	let capturedHotkey = current;
@@ -337,6 +345,8 @@ export async function openHotkeySettingsPopup() {
 		inputLabel: 'Search hotkey',
 		inputValue: current,
 		inputPlaceholder: 'Press a key combination',
+		allowEscapeKey: false,
+		allowEnterKey: false,
 		didOpen: (popup) => {
 			const label = popup.querySelector('.swal2-input-label');
 			if (label instanceof HTMLElement) {
@@ -362,6 +372,25 @@ export async function openHotkeySettingsPopup() {
 			input.insertAdjacentElement('afterend', hint);
 
 			const capture = (event) => {
+				// Enter saves the hotkey instead of capturing it
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					event.stopPropagation();
+					const parsed = parseHotkey(capturedHotkey);
+					if (parsed.key) {
+						popupApi.clickConfirm();
+					}
+					return;
+				}
+
+				// Escape closes the popup
+				if (event.key === 'Escape') {
+					event.preventDefault();
+					event.stopPropagation();
+					popupApi.close();
+					return;
+				}
+
 				event.preventDefault();
 
 				const next = eventToHotkey(event);
@@ -381,9 +410,17 @@ export async function openHotkeySettingsPopup() {
 			if (!parsed.key) return 'Enter a valid key combination.';
 			return null;
 		},
+		preConfirm: () => {
+			const parsed = parseHotkey(capturedHotkey);
+			if (!parsed.key) return false;
+			return true;
+		},
 	});
 
-	if (!result.isConfirmed) return;
+	if (!result.isConfirmed) {
+		await reopenSearchPopupSafely();
+		return;
+	}
 
 	const normalized = formatParsedHotkey(parseHotkey(capturedHotkey));
 	writeStoredHotkey(normalized);
@@ -395,4 +432,6 @@ export async function openHotkeySettingsPopup() {
 		timer: 1200,
 		showConfirmButton: false,
 	});
+
+	await reopenSearchPopupSafely();
 }

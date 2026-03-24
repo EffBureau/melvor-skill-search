@@ -314,15 +314,18 @@ function setupSkillSuggestionDropdown(popup, popupApi, onSelect, dependencies) {
  * @param {SearchPopupDependencies} dependencies Search and navigation dependencies.
  * @returns {Promise<void>}
  */
-export async function openSkillSearchPopup(dependencies) {
-	const {
-		findMatchingEntries,
-		getAllSidebarEntries,
-		navigateToEntry,
-		addRecentEntry,
-		openHotkeySettingsPopup,
-		getSearchHotkey,
-	} = dependencies;
+	export async function openSkillSearchPopup(dependencies) {
+		const {
+			findMatchingEntries,
+			getAllSidebarEntries,
+			navigateToEntry,
+			addRecentEntry,
+			openHotkeySettingsPopup,
+			getSearchHotkey,
+		} = dependencies;
+		
+		// Store reference to openSkillSearchPopup for reopening
+		const reopenSearchPopup = () => openSkillSearchPopup(dependencies);
 
 	if (
 		typeof findMatchingEntries !== 'function'
@@ -388,7 +391,7 @@ export async function openSkillSearchPopup(dependencies) {
 					gearButton.addEventListener('mouseover', () => { gearButton.style.opacity = '0.7'; });
 					gearButton.addEventListener('mouseout', () => { gearButton.style.opacity = '1'; });
 					gearButton.addEventListener('click', async () => {
-						await openHotkeySettingsPopup();
+						await openHotkeySettingsPopup(reopenSearchPopup);
 					});
 					titleEl.parentElement.style.position = 'relative';
 					titleEl.parentElement.insertAdjacentElement('beforeend', gearButton);
