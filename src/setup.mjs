@@ -10,16 +10,7 @@ export async function setup(context) {
 	const sidebarSearch = await loadModule('src/sidebar-search.mjs');
 	const recentSearches = await loadModule('src/recent-searches.mjs');
 	const hotkeySettings = await loadModule('src/hotkey-settings.mjs');
-	const interop = await loadModule('src/mod-interop.mjs');
 	const main = await loadModule('src/main.mjs');
-
-	interop.registerCombatSimulatorNamespace?.(context);
-	if (typeof context.onInterfaceAvailable === 'function') {
-		context.onInterfaceAvailable(() => {
-			interop.registerCombatSimulatorNamespace?.(context);
-			interop.logCombatSimulatorRegistrationState?.();
-		});
-	}
 
 	const hasOfficialSettings = hotkeySettings.registerHotkeySettings?.(context) === true;
 	if (!hasOfficialSettings) {
