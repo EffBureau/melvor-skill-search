@@ -314,18 +314,18 @@ function setupSkillSuggestionDropdown(popup, popupApi, onSelect, dependencies) {
  * @param {SearchPopupDependencies} dependencies Search and navigation dependencies.
  * @returns {Promise<void>}
  */
-	export async function openSkillSearchPopup(dependencies) {
-		const {
-			findMatchingEntries,
-			getAllSidebarEntries,
-			navigateToEntry,
-			addRecentEntry,
-			openHotkeySettingsPopup,
-			getSearchHotkey,
-		} = dependencies;
-		
-		// Store reference to openSkillSearchPopup for reopening
-		const reopenSearchPopup = () => openSkillSearchPopup(dependencies);
+export async function openSkillSearchPopup(dependencies) {
+	const {
+		findMatchingEntries,
+		getAllSidebarEntries,
+		navigateToEntry,
+		addRecentEntry,
+		openHotkeySettingsPopup,
+		getSearchHotkey,
+	} = dependencies;
+	
+	// Store reference to openSkillSearchPopup for reopening
+	const reopenSearchPopup = () => openSkillSearchPopup(dependencies);
 
 	if (
 		typeof findMatchingEntries !== 'function'

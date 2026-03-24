@@ -12,10 +12,8 @@ export async function setup(context) {
 	const hotkeySettings = await loadModule('src/hotkey-settings.mjs');
 	const main = await loadModule('src/main.mjs');
 
-	// Skip official settings registration - use sidebar subitem instead
-	const hasOfficialSettings = false;
-
-	console.log('SkillSearch: Using sidebar button for settings (hotkey popup).');
+	// Settings are not registered through official Mod Settings API;
+	// hotkey configuration is accessed via the search popup gear icon instead.
 
 	const dependencies = {
 		findMatchingEntries: sidebarSearch.findMatchingEntries,
@@ -36,8 +34,6 @@ export async function setup(context) {
 		isSearchHotkey: hotkeySettings.isSearchHotkey,
 		getSearchHotkey: hotkeySettings.getSearchHotkey,
 		onSearchHotkeyChanged: hotkeySettings.onSearchHotkeyChanged,
-		openHotkeySettingsPopup: hotkeySettings.openHotkeySettingsPopup,
-		hasOfficialSettings,
 	});
 
 	if (typeof context.onCharacterLoaded === 'function') {
