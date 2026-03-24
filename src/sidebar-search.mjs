@@ -25,7 +25,7 @@ function isNamespacedLabel(value) {
 
 // Whitelist: only skills + Shop + Bank should appear in search results.
 function getAllowedEntryNames() {
-	const allowed = new Set(['shop', 'bank']);
+	const allowed = new Set(['shop', 'bank', 'combat simulator']);
 	const gameApi = typeof game !== 'undefined' ? game : globalThis.game;
 	const skills = gameApi?.skills?.allObjects;
 
