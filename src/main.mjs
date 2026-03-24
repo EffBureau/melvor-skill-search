@@ -11,7 +11,12 @@
  */
 let isKeydownBound = false;
 
-export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsPopup, hasOfficialSettings } = {}) {
+export function init({
+	openSkillSearchPopup,
+	isSearchHotkey,
+	openHotkeySettingsPopup,
+	hasOfficialSettings,
+} = {}) {
 	if (typeof openSkillSearchPopup !== 'function') {
 		console.warn('SkillSearch: Popup handler is not available.');
 		return;
@@ -21,7 +26,11 @@ export function init({ openSkillSearchPopup, isSearchHotkey, openHotkeySettingsP
 		return;
 	}
 
-	registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, Boolean(hasOfficialSettings));
+	registerSidebarButton(
+		openSkillSearchPopup,
+		openHotkeySettingsPopup,
+		Boolean(hasOfficialSettings),
+	);
 	if (isKeydownBound) return;
 	isKeydownBound = true;
 
@@ -48,18 +57,14 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 		return;
 	}
 
+	const archaeologyIcon = getArchaeologyIconData();
+	const iconConfig = getItemIconConfig(archaeologyIcon);
 	const shopLocation = getShopLocation();
 	const targetCategory = shopLocation?.category ?? sidebar.category('General');
 	const skillSearchItem = targetCategory.item('Skill Search', {
 		name: 'Skill Search',
 		...(shopLocation ? { before: shopLocation.itemId } : {}),
-		iconClass: 'fa fa-search',
-		onRender: ({ iconEl }) => {
-			if (!(iconEl instanceof HTMLElement)) return;
-			iconEl.style.display = 'flex';
-			iconEl.style.alignItems = 'center';
-			iconEl.style.justifyContent = 'center';
-		},
+		...iconConfig,
 		onClick: () => {
 			void openSkillSearchPopup();
 		},
@@ -68,11 +73,86 @@ function registerSidebarButton(openSkillSearchPopup, openHotkeySettingsPopup, ha
 	if (hasOfficialSettings || typeof openHotkeySettingsPopup !== 'function') return;
 
 	skillSearchItem.subitem('SkillSearch:Settings', {
-		name: 'Settings',
+		name: buildSettingsLabel(archaeologyIcon),
 		onClick: () => {
 			void openHotkeySettingsPopup();
 		},
 	});
+}
+
+/**
+ * Finds Archaeology icon metadata from game skill media.
+ *
+ * @returns {{kind?: string, value?: string} | null}
+ */
+function getArchaeologyIconData() {
+	const gameApi = typeof game !== 'undefined' ? game : globalThis.game;
+	const skills = gameApi?.skills?.allObjects;
+	if (!skills) return null;
+
+	const archaeology = Array.from(skills).find((skill) => {
+		const name = String(skill?.name ?? '').trim().toLowerCase();
+		return name === 'archaeology';
+	});
+
+	if (typeof archaeology?.media !== 'string' || !archaeology.media) return null;
+	return { kind: 'image', value: archaeology.media };
+}
+
+/**
+ * Converts icon metadata to sidebar ItemConfig icon fields.
+ *
+ * @param {{kind?: string, value?: string} | null} iconData
+ * @returns {{icon?: string, iconClass?: string}}
+ */
+function getItemIconConfig(iconData) {
+	if (!iconData || typeof iconData !== 'object') {
+		return { iconClass: 'fa fa-search' };
+	}
+
+	if (iconData.kind === 'image' && typeof iconData.value === 'string' && iconData.value) {
+		return { icon: iconData.value };
+	}
+
+	if (iconData.kind === 'class' && typeof iconData.value === 'string' && iconData.value) {
+		return { iconClass: iconData.value };
+	}
+
+	return { iconClass: 'fa fa-search' };
+}
+
+/**
+ * Builds a settings label element with optional icon for fallback sidebar settings.
+ *
+ * @param {{kind?: string, value?: string} | null} iconData
+ * @returns {string | HTMLElement}
+ */
+function buildSettingsLabel(iconData) {
+	if (!iconData || typeof iconData !== 'object') return 'Settings';
+
+	const container = document.createElement('span');
+	container.style.display = 'inline-flex';
+	container.style.alignItems = 'center';
+	container.style.gap = '0.35rem';
+
+	if (iconData.kind === 'image' && typeof iconData.value === 'string' && iconData.value) {
+		const img = document.createElement('img');
+		img.src = iconData.value;
+		img.alt = '';
+		img.width = 14;
+		img.height = 14;
+		container.appendChild(img);
+	} else if (iconData.kind === 'class' && typeof iconData.value === 'string' && iconData.value) {
+		const icon = document.createElement('i');
+		icon.className = iconData.value;
+		container.appendChild(icon);
+	}
+
+	const text = document.createElement('span');
+	text.textContent = 'Settings';
+	container.appendChild(text);
+
+	return container;
 }
 
 /**
