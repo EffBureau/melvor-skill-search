@@ -401,7 +401,13 @@ function setupSkillSuggestionDropdown(popup, popupApi, onSelect, dependencies) {
 		showCancelButton: true,
 		confirmButtonText: 'Search',
 		inputValidator: (value) => {
-			if (!value || !value.trim()) return 'Enter a skill name.';
+			const rawValue = String(value ?? '').trim();
+			if (!rawValue) return 'Enter a skill name.';
+
+			const query = rawValue.toLowerCase();
+			const matches = findMatchingEntries(query);
+			if (matches.length === 0) return `No skill named "${rawValue}" exists.`;
+
 			return null;
 		},
 	});
@@ -419,14 +425,7 @@ function setupSkillSuggestionDropdown(popup, popupApi, onSelect, dependencies) {
 		return;
 	}
 
-	if (matches.length === 0) {
-		await popupApi.fire({
-			icon: 'info',
-			title: 'No results found',
-			text: `No result matched "${rawValue}".`,
-		});
-		return;
-	}
+	if (matches.length === 0) return;
 
 	addRecentEntry(matches[0]);
 	navigateToEntry(matches[0]);
